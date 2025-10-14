@@ -1,7 +1,7 @@
 [project]
-name = "nanochat"
+name = "cofounderchat"
 version = "0.1.0"
-description = "the minimal full-stack ChatGPT clone"
+description = "Your conscious AI co-founder - trained on Conscious Economics and Time Violence reduction"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
@@ -32,6 +32,11 @@ torch = [
 name = "pytorch-cu128"
 url = "https://download.pytorch.org/whl/cu128"
 explicit = true
+
+[project.urls]
+Homepage = "https://github.com/leoguinan/cofounderchat"
+Documentation = "https://github.com/leoguinan/cofounderchat/blob/master/CONSCIOUS_ECONOMICS.md"
+Repository = "https://github.com/leoguinan/cofounderchat"
 
 [tool.maturin]
 module-name = "rustbpe"

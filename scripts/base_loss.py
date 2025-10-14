@@ -8,19 +8,19 @@ torchrun --standalone --nproc_per_node=8 -m scripts.base_loss
 """
 import os
 import torch
-from nanochat.checkpoint_manager import load_model
-from nanochat.common import compute_init, print0, compute_cleanup
-from nanochat.dataloader import tokenizing_distributed_data_loader
-from nanochat.tokenizer import get_token_bytes
-from nanochat.loss_eval import evaluate_bpb
-from nanochat.engine import Engine
+from cofounderchat.checkpoint_manager import load_model
+from cofounderchat.common import compute_init, print0, compute_cleanup
+from cofounderchat.dataloader import tokenizing_distributed_data_loader
+from cofounderchat.tokenizer import get_token_bytes
+from cofounderchat.loss_eval import evaluate_bpb
+from cofounderchat.engine import Engine
 
 # Configuration
 device_batch_size = 32
 split_tokens = 20*524288  # number of tokens to evaluate per split
 model_tag = None # optional model tag for the output directory name
 model_step = None # optional model step for the output directory name
-exec(open(os.path.join('nanochat', 'configurator.py')).read()) # overrides from command line or config file
+exec(open(os.path.join('cofounderchat', 'configurator.py')).read()) # overrides from command line or config file
 
 # Load the base model and the tokenizer
 ddp, ddp_rank, ddp_local_rank, ddp_world_size, device = compute_init()
@@ -65,7 +65,7 @@ if ddp_rank == 0:
         samples.append(sample_str)
 
 # Log to report
-from nanochat.report import get_report
+from cofounderchat.report import get_report
 get_report().log(section="Base model loss", data=[
     {
         "train bpb": bpb_results["train"],

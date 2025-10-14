@@ -430,7 +430,7 @@ def enwik8_path():
     """Fixture to download and cache enwik8 dataset."""
     import os
     import zipfile
-    from nanochat.common import get_base_dir
+    from cofounderchat.common import get_base_dir
     base_dir = get_base_dir()
     # download and unzip enwik8 to .cache directory
     enwik8_url = "https://mattmahoney.net/dc/enwik8.zip"
@@ -597,7 +597,7 @@ def test_training_performance(enwik8_large):
 def test_interface(enwik8_small):
     """Test the RustBPETokenizer interface for training, encoding, decoding, and serialization."""
     import tempfile
-    from nanochat.tokenizer import RustBPETokenizer
+    from cofounderchat.tokenizer import RustBPETokenizer
 
     # Simple train test
     vocab_size = 300

@@ -78,7 +78,7 @@ def get_system_info():
 
     # User and environment
     info['user'] = os.environ.get('USER', 'unknown')
-    info['nanochat_base_dir'] = os.environ.get('NANOCHAT_BASE_DIR', 'out')
+    info['cofounderchat_base_dir'] = os.environ.get('NANOCHAT_BASE_DIR', 'out')
     info['working_dir'] = os.getcwd()
 
     return info
@@ -123,7 +123,7 @@ def generate_header():
     sys_info = get_system_info()
     cost_info = estimate_cost(gpu_info)
 
-    header = f"""# nanochat training report
+    header = f"""# cofounderchat training report
 
 Generated: {timestamp}
 
@@ -375,7 +375,7 @@ class Report:
         print(f"Reset report and wrote header to {header_file}")
 
 # -----------------------------------------------------------------------------
-# nanochat-specific convenience functions
+# cofounderchat-specific convenience functions
 
 class DummyReport:
     def log(self, *args, **kwargs):
@@ -385,7 +385,7 @@ class DummyReport:
 
 def get_report():
     # just for convenience, only rank 0 logs to report
-    from nanochat.common import get_base_dir, get_dist_info
+    from cofounderchat.common import get_base_dir, get_dist_info
     ddp, ddp_rank, ddp_local_rank, ddp_world_size = get_dist_info()
     if ddp_rank == 0:
         report_dir = os.path.join(get_base_dir(), "report")
@@ -395,7 +395,7 @@ def get_report():
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Generate or reset nanochat training reports.")
+    parser = argparse.ArgumentParser(description="Generate or reset cofounderchat training reports.")
     parser.add_argument("command", nargs="?", default="generate", choices=["generate", "reset"], help="Operation to perform (default: generate)")
     args = parser.parse_args()
     if args.command == "generate":

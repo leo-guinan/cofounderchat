@@ -8,10 +8,10 @@ import json
 import logging
 import torch
 
-from nanochat.common import get_base_dir
-from nanochat.gpt import GPT, GPTConfig
-from nanochat.tokenizer import get_tokenizer
-from nanochat.common import setup_default_logging
+from cofounderchat.common import get_base_dir
+from cofounderchat.gpt import GPT, GPTConfig
+from cofounderchat.tokenizer import get_tokenizer
+from cofounderchat.common import setup_default_logging
 
 # Set up logging
 setup_default_logging()
@@ -117,7 +117,7 @@ def find_last_step(checkpoint_dir):
     return last_step
 
 # -----------------------------------------------------------------------------
-# convenience functions that take into account nanochat's directory structure
+# convenience functions that take into account cofounderchat's directory structure
 
 def load_model_from_dir(checkpoints_dir, device, phase, model_tag=None, step=None):
     if model_tag is None:

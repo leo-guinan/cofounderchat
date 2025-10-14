@@ -14,7 +14,7 @@ import requests
 import pyarrow.parquet as pq
 from multiprocessing import Pool
 
-from nanochat.common import get_base_dir
+from cofounderchat.common import get_base_dir
 
 # -----------------------------------------------------------------------------
 # The specifics of the current pretraining dataset

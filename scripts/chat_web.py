@@ -16,9 +16,9 @@ from fastapi.responses import StreamingResponse, HTMLResponse, FileResponse
 from pydantic import BaseModel
 from typing import List, Optional, AsyncGenerator
 
-from nanochat.common import compute_init
-from nanochat.checkpoint_manager import load_model
-from nanochat.engine import Engine
+from cofounderchat.common import compute_init
+from cofounderchat.checkpoint_manager import load_model
+from cofounderchat.engine import Engine
 
 parser = argparse.ArgumentParser(description='NanoChat Web Server')
 parser.add_argument('-i', '--source', type=str, default="sft", help="Source of the model: sft|mid|rl")
@@ -48,7 +48,7 @@ class ChatRequest(BaseModel):
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Load model on startup."""
-    print("Loading nanochat model...")
+    print("Loading cofounderchat model...")
     app.state.model, app.state.tokenizer, _ = load_model(args.source, device, phase="eval", model_tag=args.model_tag, step=args.step)
     app.state.engine = Engine(app.state.model, app.state.tokenizer)
     print(f"Server ready at http://localhost:{args.port}")
@@ -67,7 +67,7 @@ app.add_middleware(
 @app.get("/")
 async def root():
     """Serve the chat UI."""
-    ui_html_path = os.path.join("nanochat", "ui.html")
+    ui_html_path = os.path.join("cofounderchat", "ui.html")
     with open(ui_html_path, "r") as f:
         html_content = f.read()
     # Replace the API_URL to use the same origin
@@ -81,7 +81,7 @@ async def root():
 @app.get("/logo.svg")
 async def logo():
     """Serve the NanoChat logo for favicon and header."""
-    logo_path = os.path.join("nanochat", "logo.svg")
+    logo_path = os.path.join("cofounderchat", "logo.svg")
     return FileResponse(logo_path, media_type="image/svg+xml")
 
 async def generate_stream(

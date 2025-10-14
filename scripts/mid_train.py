@@ -16,17 +16,21 @@ import time
 import wandb
 import torch
 
-from nanochat.common import compute_init, compute_cleanup, print0, DummyWandb, get_base_dir
-from nanochat.tokenizer import get_token_bytes
-from nanochat.checkpoint_manager import save_checkpoint
-from nanochat.loss_eval import evaluate_bpb
-from nanochat.checkpoint_manager import load_model
+from cofounderchat.common import compute_init, compute_cleanup, print0, DummyWandb, get_base_dir
+from cofounderchat.tokenizer import get_token_bytes
+from cofounderchat.checkpoint_manager import save_checkpoint
+from cofounderchat.loss_eval import evaluate_bpb
+from cofounderchat.checkpoint_manager import load_model
 import torch.distributed as dist
 
 from tasks.common import TaskMixture
 from tasks.gsm8k import GSM8K
 from tasks.mmlu import MMLU
 from tasks.smoltalk import SmolTalk
+# Conscious Economics tasks
+from tasks.conscious_biz_math import ConsciousBizMath
+from tasks.experiment_cards import ExperimentCards
+from tasks.compliance_drills import ComplianceDrills
 
 # -----------------------------------------------------------------------------
 run = "dummy" # wandb run name default ("dummy" is special - we won't log to wandb)
@@ -45,7 +49,7 @@ eval_every = 150
 eval_tokens = 20*524288
 total_batch_size = 524288
 config_keys = [k for k,v in globals().items() if not k.startswith('_') and isinstance(v, (int, float, bool, str))]
-exec(open(os.path.join('nanochat', 'configurator.py')).read()) # overrides from command line or config file
+exec(open(os.path.join('cofounderchat', 'configurator.py')).read()) # overrides from command line or config file
 user_config = {k: globals()[k] for k in config_keys} # possibly useful for logging
 # -----------------------------------------------------------------------------
 
@@ -57,7 +61,7 @@ autocast_ctx = torch.amp.autocast(device_type="cuda", dtype=dtype)
 
 # wandb logging init
 use_dummy_wandb = run == "dummy" or not master_process
-wandb_run = DummyWandb() if use_dummy_wandb else wandb.init(project="nanochat-mid", name=run, config=user_config)
+wandb_run = DummyWandb() if use_dummy_wandb else wandb.init(project="cofounderchat-mid", name=run, config=user_config)
 
 # Load the model and tokenizer
 model, tokenizer, meta = load_model("base", device, phase="train", model_tag=model_tag, step=step)
@@ -89,15 +93,22 @@ for opt in optimizers:
 # Midtraining data mixture and DataLoader
 base_dir = get_base_dir()
 train_dataset = TaskMixture([
-    SmolTalk(split="train"), # 460K rows of general conversations
-    MMLU(subset="auxiliary_train", split="train"), # 100K rows of multiple choice problems drawn from ARC, MC_TEST, OBQA, RACE
+    # Conscious Economics tasks (will scale to 170K when full dataset is generated)
+    ConsciousBizMath(split="train"),   # 10 rows (TODO: scale to 100K when generated)
+    ExperimentCards(split="train"),     # 5 rows (TODO: scale to 50K when generated)
+    ComplianceDrills(split="train"),    # 5 rows (TODO: scale to 20K when generated)
+    # Standard tasks (reduced to make room for conscious economics)
+    SmolTalk(split="train", stop=230_000), # 230K rows (was 460K, reduced 50%)
+    MMLU(subset="auxiliary_train", split="train", stop=50_000), # 50K rows (was 100K, reduced 50%)
     GSM8K(subset="main", split="train"), # 8K rows teaching simple math and (calculator) tool use
-]) # total: 460K + 100K + 8K = 568K rows
+]) # current total: 20 + 230K + 50K + 8K = 288K rows (was 568K)
+   # future total: 170K + 230K + 50K + 8K = 458K rows (when conscious economics data is generated)
 val_dataset = TaskMixture([
     SmolTalk(split="test"), # 24K rows in test set
     MMLU(subset="all", split="test", stop=5200), # 14K rows in test set, use only 5.2K to match the train ratios
     GSM8K(subset="main", split="test", stop=420), # 1.32K rows in test set, use only 420 to match the train ratios
 ]) # total: 24K + 14K + 1.32K ~= 39K rows
+   # TODO: Add conscious economics validation split when we have test data
 # DataLoader is defined here, it emits inputs, targets : 2D tensors of shape (device_batch_size, max_seq_len)
 # A big problem is that we don't know the final num_iterations in advance. So we create
 # these two global variables and update them from within the data generator.
@@ -272,7 +283,7 @@ print0(f"Total training time: {total_training_time/60:.2f}m")
 print0(f"Minimum validation bpb: {min_val_bpb:.4f}")
 
 # Log to report
-from nanochat.report import get_report
+from cofounderchat.report import get_report
 get_report().log(section="Midtraining", data=[
     user_config, # CLI args
     { # stats about the training setup

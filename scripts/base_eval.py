@@ -19,10 +19,10 @@ import yaml
 import pandas as pd
 import torch
 
-from nanochat.common import compute_init, compute_cleanup, print0, get_base_dir
-from nanochat.tokenizer import HuggingFaceTokenizer
-from nanochat.checkpoint_manager import load_model
-from nanochat.core_eval import evaluate_task
+from cofounderchat.common import compute_init, compute_cleanup, print0, get_base_dir
+from cofounderchat.tokenizer import HuggingFaceTokenizer
+from cofounderchat.checkpoint_manager import load_model
+from cofounderchat.core_eval import evaluate_task
 
 # -----------------------------------------------------------------------------
 # nanoChat specific function dealing with I/O etc.
@@ -165,7 +165,7 @@ def main():
             print0(f.read())
 
     # Log to report
-    from nanochat.report import get_report
+    from cofounderchat.report import get_report
     get_report().log(section="Base model evaluation", data=[
         {
             "Model": model_name,

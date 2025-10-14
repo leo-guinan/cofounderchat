@@ -15,10 +15,15 @@ import torch
 import torch.nn.functional as F
 import signal
 import warnings
+import re
 from contextlib import contextmanager
 from collections import deque
-from nanochat.common import compute_init
-from nanochat.checkpoint_manager import load_model
+from cofounderchat.common import compute_init
+from cofounderchat.checkpoint_manager import load_model
+from cofounderchat.conscious_tools import (
+    tv_ops, tv_info, tv_total, conscious_index, 
+    time_dividends, roi_conscious
+)
 
 # -----------------------------------------------------------------------------
 # Calculator tool helpers
@@ -51,6 +56,101 @@ def use_calculator(expr):
     if "**" in expr: # for now disallow power operator, could be very expensive
         return None
     return eval_with_timeout(expr)
+
+# -----------------------------------------------------------------------------
+# Conscious Economics tool helpers
+
+def parse_float_param(text, param_name):
+    """Extract a float parameter from text like 'param_name=3.14' or 'param_name: 3.14'"""
+    patterns = [
+        rf'{param_name}\s*=\s*([+-]?\d+\.?\d*)',  # param=3.14
+        rf'{param_name}\s*:\s*([+-]?\d+\.?\d*)',  # param: 3.14
+    ]
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            try:
+                return float(match.group(1))
+            except ValueError:
+                continue
+    return None
+
+def use_conscious_tool(block_type, text):
+    """
+    Parse and execute conscious economics calculations.
+    
+    Args:
+        block_type: Type of block ('time_violence', 'metrics', etc.)
+        text: Decoded text content of the block
+    
+    Returns:
+        Formatted result string or None if parsing fails
+    """
+    try:
+        if block_type == 'time_violence':
+            # Parse TV calculation: tv_ops(arr_rate, svc_rate, var_arr, var_svc, tau)
+            # Expected format: "ops(arr=10, svc=12, var_arr=4, var_svc=2, tau=8)"
+            # Or: "arr_rate=10, svc_rate=12, var_arr=4, var_svc=2, tau=8"
+            arr_rate = parse_float_param(text, 'arr_rate') or parse_float_param(text, 'arr')
+            svc_rate = parse_float_param(text, 'svc_rate') or parse_float_param(text, 'svc')
+            var_arr = parse_float_param(text, 'var_arr')
+            var_svc = parse_float_param(text, 'var_svc')
+            tau = parse_float_param(text, 'tau')
+            
+            if all(x is not None for x in [arr_rate, svc_rate, var_arr, var_svc, tau]):
+                ops_score = tv_ops(arr_rate, svc_rate, var_arr, var_svc, tau)
+                return f"\nOps_Score = {ops_score:.2f} hours"
+            
+            # Try parsing info TV: tv_info(dkl, decision_entropy, redundancy_mi)
+            dkl = parse_float_param(text, 'dkl') or parse_float_param(text, 'd_kl')
+            decision_entropy = parse_float_param(text, 'decision_entropy') or parse_float_param(text, 'entropy')
+            redundancy = parse_float_param(text, 'redundancy_mi') or parse_float_param(text, 'redundancy')
+            
+            if all(x is not None for x in [dkl, decision_entropy, redundancy]):
+                info_score = tv_info(dkl, decision_entropy, redundancy)
+                return f"\nInfo_Score = {info_score:.2f}"
+            
+            # Try parsing total TV + consciousness
+            tv_human = parse_float_param(text, 'tv_human') or parse_float_param(text, 'tvh')
+            tv_tot = parse_float_param(text, 'tv_total') or parse_float_param(text, 'tv')
+            
+            if tv_human is not None and tv_tot is not None:
+                c_index = conscious_index(tv_human, tv_tot)
+                return f"\nC(S) = {c_index:.2%}"
+            
+        elif block_type == 'time_dividend':
+            # Parse TD calculation: time_dividends(hours_saved)
+            hours_saved = parse_float_param(text, 'hours_saved') or parse_float_param(text, 'hours') or parse_float_param(text, 'dtvh')
+            
+            if hours_saved is not None:
+                td = time_dividends(hours_saved)
+                result = f"\nUsers: {td['users']:.1f}h, Navigators: {td['navigators']:.1f}h, Company: {td['company']:.1f}h"
+                return result
+        
+        elif block_type == 'metrics':
+            # Parse C-ROI calculation
+            rev = parse_float_param(text, 'rev') or parse_float_param(text, 'revenue') or 0
+            dtvh = parse_float_param(text, 'dtvh') or parse_float_param(text, 'hours_saved') or 0
+            v_t = parse_float_param(text, 'v_t') or parse_float_param(text, 'shadow_price') or 35.0
+            delta_c = parse_float_param(text, 'delta_c') or parse_float_param(text, 'dc') or 0
+            trust = parse_float_param(text, 'trust') or parse_float_param(text, 't') or 0
+            compliance = parse_float_param(text, 'compliance') or parse_float_param(text, 'x') or 0
+            quality = parse_float_param(text, 'quality') or parse_float_param(text, 'q') or 0
+            
+            # Only compute if we have at least revenue or time savings
+            if rev > 0 or dtvh > 0:
+                roi = roi_conscious(rev=rev, dtvh=dtvh, v_t=v_t, delta_c=delta_c, 
+                                   trust=trust, compliance=compliance, quality=quality)
+                result = f"\nC-ROI* = ${roi['c_roi']:.2f}"
+                if dtvh > 0:
+                    result += f" (Time Value: ${roi['time_value']:.2f})"
+                return result
+                
+    except Exception as e:
+        # Silently fail - model is still learning, don't crash on malformed input
+        pass
+    
+    return None
 
 # -----------------------------------------------------------------------------
 class KVCache:
@@ -152,6 +252,10 @@ class RowState:
         self.forced_tokens = deque() # Queue of tokens to force inject
         self.in_python_block = False # Whether we are inside a python block
         self.python_expr_tokens = [] # Tokens of the current python expression
+        # Conscious Economics tool state
+        self.in_conscious_block = False # Whether we are inside a conscious economics block
+        self.conscious_block_type = None # Type: 'time_violence', 'metrics', etc.
+        self.conscious_block_tokens = [] # Tokens of the current conscious block
         self.completed = False # Whether this row has completed generation
 
 class Engine:
@@ -176,6 +280,30 @@ class Engine:
         output_end = get_special("<|output_end|>")
         assistant_end = get_special("<|assistant_end|>") # if sampled, ends row
         bos = self.tokenizer.get_bos_token_id() # if sampled, ends row
+        
+        # Conscious Economics special tokens
+        time_violence_token = get_special("<|time_violence|>")
+        time_dividend_token = get_special("<|time_dividend|>")
+        metrics_token = get_special("<|metrics|>")
+        assumptions_token = get_special("<|assumptions|>")
+        risks_token = get_special("<|risks|>")
+        tests_token = get_special("<|tests|>")
+        trust_evidence_token = get_special("<|trust_evidence|>")
+        compliance_token = get_special("<|compliance|>")
+        
+        # Section headers that terminate a conscious block
+        conscious_section_tokens = {
+            assumptions_token, risks_token, tests_token, 
+            time_violence_token, time_dividend_token, metrics_token,
+            trust_evidence_token, compliance_token
+        }
+        
+        # Map tokens to block types for processing
+        token_to_block_type = {
+            time_violence_token: 'time_violence',
+            time_dividend_token: 'time_dividend',
+            metrics_token: 'metrics',
+        }
 
         # 1) Run a batch 1 prefill of the prompt tokens
         m = self.model.config
@@ -259,6 +387,32 @@ class Engine:
                     state.python_expr_tokens = []
                 elif state.in_python_block:
                     state.python_expr_tokens.append(next_token)
+                
+                # Handle Conscious Economics tool blocks
+                # When we hit a new section or end, process the previous conscious block
+                if next_token in conscious_section_tokens or next_token == assistant_end:
+                    # Process the previous block if we were in one
+                    if state.in_conscious_block and state.conscious_block_tokens:
+                        text = self.tokenizer.decode(state.conscious_block_tokens)
+                        result = use_conscious_tool(state.conscious_block_type, text)
+                        if result is not None:
+                            result_tokens = self.tokenizer.encode(result)
+                            state.forced_tokens.extend(result_tokens)
+                    
+                    # Start a new conscious block if this is a processable section
+                    if next_token in token_to_block_type:
+                        state.in_conscious_block = True
+                        state.conscious_block_type = token_to_block_type[next_token]
+                        state.conscious_block_tokens = []
+                    else:
+                        # End of conscious blocks
+                        state.in_conscious_block = False
+                        state.conscious_block_type = None
+                        state.conscious_block_tokens = []
+                
+                elif state.in_conscious_block:
+                    # Accumulate tokens for the current conscious block
+                    state.conscious_block_tokens.append(next_token)
 
             # Yield the token column
             yield token_column, token_masks

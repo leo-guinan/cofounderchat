@@ -14,13 +14,13 @@ import time
 import wandb
 import torch
 
-from nanochat.gpt import GPT, GPTConfig
-from nanochat.dataloader import tokenizing_distributed_data_loader
-from nanochat.common import compute_init, compute_cleanup, print0, DummyWandb, print_banner, get_base_dir
-from nanochat.tokenizer import get_tokenizer, get_token_bytes
-from nanochat.checkpoint_manager import save_checkpoint
-from nanochat.loss_eval import evaluate_bpb
-from nanochat.engine import Engine
+from cofounderchat.gpt import GPT, GPTConfig
+from cofounderchat.dataloader import tokenizing_distributed_data_loader
+from cofounderchat.common import compute_init, compute_cleanup, print0, DummyWandb, print_banner, get_base_dir
+from cofounderchat.tokenizer import get_tokenizer, get_token_bytes
+from cofounderchat.checkpoint_manager import save_checkpoint
+from cofounderchat.loss_eval import evaluate_bpb
+from cofounderchat.engine import Engine
 from scripts.base_eval import evaluate_model
 print_banner()
 
@@ -52,7 +52,7 @@ sample_every = 2000 # every how many steps to sample from the model
 model_tag = "" # optionally override the model tag for the output checkpoint directory name
 # now allow CLI to override the settings via the configurator lol
 config_keys = [k for k,v in globals().items() if not k.startswith('_') and isinstance(v, (int, float, bool, str))]
-exec(open(os.path.join('nanochat', 'configurator.py')).read()) # overrides from command line or config file
+exec(open(os.path.join('cofounderchat', 'configurator.py')).read()) # overrides from command line or config file
 user_config = {k: globals()[k] for k in config_keys} # will be useful for logging
 # -----------------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ autocast_ctx = torch.amp.autocast(device_type="cuda", dtype=torch.bfloat16)
 
 # wandb logging init
 use_dummy_wandb = run == "dummy" or not master_process
-wandb_run = DummyWandb() if use_dummy_wandb else wandb.init(project="nanochat", name=run, config=user_config)
+wandb_run = DummyWandb() if use_dummy_wandb else wandb.init(project="cofounderchat", name=run, config=user_config)
 
 # Tokenizer will be useful for evaluation, also we need the vocab size
 tokenizer = get_tokenizer()
@@ -309,7 +309,7 @@ print0(f"Total training time: {total_training_time/60:.2f}m")
 print0(f"Minimum validation bpb: {min_val_bpb:.4f}")
 
 # Log to report
-from nanochat.report import get_report
+from cofounderchat.report import get_report
 get_report().log(section="Base model training", data=[
     user_config, # CLI args
     { # stats about the training setup

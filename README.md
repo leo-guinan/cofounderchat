@@ -1,129 +1,402 @@
-# nanochat
+# CofounderChat
 
-![nanochat logo](dev/nanochat.png)
+> Your conscious AI co-founder trained on Conscious Economics and Time Violence reduction
 
-> The best ChatGPT that $100 can buy.
+**CofounderChat** is an AI trained to think like a founder who understands both revenue AND human time costs. Built on [nanochat](https://github.com/karpathy/nanochat), it extends traditional LLM chat with **Conscious Economics** reasoning.
 
-This repo is a full-stack implementation of an LLM like ChatGPT in a single, clean, minimal, hackable, dependency-lite codebase. nanochat is designed to run on a single 8XH100 node via scripts like [speedrun.sh](speedrun.sh), that run the entire pipeline start to end. This includes tokenization, pretraining, finetuning, evaluation, inference, and web serving over a simple UI so that you can talk to your own LLM just like ChatGPT. nanochat will become the capstone project of the course LLM101n being developed by Eureka Labs.
+## What Makes It Different
 
-## Quick start
+**Traditional AI:** 
+```
+Q: Should we build feature X?
+A: Yes, it will improve user experience.
+```
 
-The fastest way to feel the magic is to run the speedrun script [speedrun.sh](speedrun.sh), which trains and inferences the $100 tier of nanochat. On an 8XH100 node at $24/hr, this gives a total run time of about 4 hours. Boot up a new 8XH100 GPU box from your favorite provider (e.g. I use and like [Lambda](https://lambda.ai/service/gpu-cloud)), and kick off the training script:
+**CofounderChat:**
+```
+Q: Should we build feature X?
+
+A: <|assumptions|>
+   1. Users want this (no validation yet)
+   2. Dev time = 2 weeks
+   
+   <|tests|>
+   Survey 20 users first: "Would you use this?"
+   Success = ≥60% say "definitely"
+   
+   <|time_violence|>
+   Building without validation = 80 hours wasted if wrong
+   
+   <|metrics|>
+   C-ROI* = $0 (no evidence of demand)
+   
+   Recommendation: TEST before building
+```
+
+The model calculates:
+- **Time Violence** (hours wasted by complexity)
+- **Time Dividends** (who gets hours back, and how many)
+- **Consciousness Index** C(S) = 1 - (TVH/TV)
+- **Conscious ROI** (revenue + time value, not just revenue)
+
+---
+
+## Current Status
+
+**Infrastructure:** ✅ 70% Complete (Phases 1-7)
+- Token vocabulary (21 special tokens for structured reasoning)
+- Calculation engine (Time Violence, Consciousness Index, C-ROI)
+- Training pipeline (midtraining + SFT with Conscious Economics)
+- Validation dataset (36 curated examples)
+- Evaluation tasks (Time Violence accuracy, TD accounting, trust/compliance)
+
+**Training data:** 36 examples (scales to 170K+ when needed)
+
+**Ready to train:** When you rent 8xH100 GPUs ($96 for 4 hours)
+
+📖 **[CONSCIOUS_ECONOMICS.md](CONSCIOUS_ECONOMICS.md)** - Full technical documentation  
+📊 **[STATUS.md](STATUS.md)** - Current progress and next steps  
+📝 **[VALIDATION_DATASET.md](VALIDATION_DATASET.md)** - Training data details  
+
+---
+
+## Quick Start
+
+### Option 1: Local Validation Test (MacBook, $0)
+
+Test if the pattern is learnable without GPUs:
 
 ```bash
+# Setup (first time only)
+uv venv && uv sync
+source .venv/bin/activate
+
+# Train tokenizer with Conscious Economics tokens
+python -m scripts.tok_train --vocab_size=8192
+
+# Test if model can learn the pattern
+python test_validation_pattern.py
+```
+
+Expected: Model learns to emit `<|assumptions|>`, `<|metrics|>` blocks.
+
+See [QUICKSTART_VALIDATION.md](QUICKSTART_VALIDATION.md) for details.
+
+---
+
+### Option 2: Full Training (Cloud GPUs, $96)
+
+Train a production model with Conscious Economics:
+
+```bash
+# On Lambda Labs 8xH100 instance
 bash speedrun.sh
 ```
 
-Alternatively, since the script runs for 4 hours, I like to launch it like this inside a new screen session `speedrun` (and also log output to `speedrun.log`):
+This runs the full pipeline (4 hours):
+1. Tokenizer training (with 21 special tokens)
+2. Base pretraining
+3. Midtraining (with Conscious Economics mixture)
+4. Supervised fine-tuning (enforces C-ROI schema)
+5. Optional: Reinforcement learning
 
-```bash
-screen -L -Logfile speedrun.log -S speedrun bash speedrun.sh
-```
-
-See the [screen cheatsheet](https://gist.github.com/jctosta/af918e1618682638aa82) if you are less familiar. You can watch it go inside the screen session, or detach with `Ctrl-a d` and `tail speedrun.log` to view progress. Now wait 4 hours. Once it's done, you can talk to your LLM via the ChatGPT-like web UI. Make sure again that your local uv virtual environment is active (run `source .venv/bin/activate`), and serve it:
+Then chat with your model:
 
 ```bash
 python -m scripts.chat_web
+# Visit http://[your-ip]:8000
 ```
 
-And then visit the URL shown. Make sure to access it correctly, e.g. on Lambda use the public IP of the node you're on, followed by the port, so for example [http://209.20.xxx.xxx:8000/](http://209.20.xxx.xxx:8000/), etc. Then talk to your LLM as you'd normally talk to ChatGPT! Get it to write stories or poems. Ask it to tell you who you are to see a hallucination. Ask it why the sky is blue. Or why it's green. The speedrun is a 4e19 FLOPs capability model so it's a bit like talking to a kindergartener :).
+Ask founder questions:
+- "Should we hire a CSM at $80K?"
+- "Price increase: $49 to $79?"
+- "Can we claim '10x faster' in marketing?"
+
+The model will respond with Time Violence calculations and Conscious ROI.
 
 ---
 
-<img width="2672" height="1520" alt="image" src="https://github.com/user-attachments/assets/ed39ddf8-2370-437a-bedc-0f39781e76b5" />
+## Built on nanochat
+
+CofounderChat is a fork of Andrej Karpathy's [nanochat](https://github.com/karpathy/nanochat) - the minimal, hackable ChatGPT implementation.
+
+**nanochat provides:**
+- Full training pipeline (tokenization → pretraining → SFT → RL)
+- Clean, readable codebase (~8K lines)
+- Runs on $100 of GPU compute (8xH100, 4 hours)
+- Produces working ChatGPT clone
+
+**CofounderChat adds:**
+- 12 new special tokens (assumptions, metrics, time_violence, etc.)
+- Conscious Economics calculation engine (tv_ops, conscious_index, roi_conscious)
+- Time Violence awareness (measures hours wasted by complexity)
+- C-ROI optimization (revenue + time value, not just revenue)
+- Trust & compliance checking (evidence requirements, constraint validation)
+
+All changes are documented in [CONSCIOUS_ECONOMICS.md](CONSCIOUS_ECONOMICS.md).
 
 ---
 
-You can also `cat report.md` file which appeared in the project directory and contains the "report card" of the run, i.e. a bunch of evaluations and metrics. At the very end, you'll see a summary table, for example:
+## Hardware Requirements
+
+### For Local Testing (Free)
+- MacBook with M-series chip (or any CPU)
+- Tests if pattern is learnable
+- No GPU needed
+- Takes 10-30 minutes
+
+### For Full Training ($96)
+- **Recommended:** 8x H100 GPUs (80GB each)
+- **Also works:** 8x A100 GPUs (80GB each, slightly slower)
+- **Budget option:** Single GPU (8x slower, 32 hours instead of 4)
+- **Provider:** Lambda Labs, RunPod, or Vast.ai
+
+**Cost:** $24/hour × 4 hours = $96 for full pipeline
 
 ---
 
-- Characters: 333,989
-- Lines: 8,304
-- Files: 44
-- Tokens (approx): 83,497
-- Dependencies (uv.lock lines): 2,004
+## Training Data
 
-| Metric          | BASE     | MID      | SFT      | RL       |
-|-----------------|----------|----------|----------|----------|
-| CORE            | 0.2219   | -        | -        | -        |
-| ARC-Challenge   | -        | 0.2875   | 0.2807   | -        |
-| ARC-Easy        | -        | 0.3561   | 0.3876   | -        |
-| GSM8K           | -        | 0.0250   | 0.0455   | 0.0758   |
-| HumanEval       | -        | 0.0671   | 0.0854   | -        |
-| MMLU            | -        | 0.3111   | 0.3151   | -        |
-| ChatCORE        | -        | 0.0730   | 0.0884   | -        |
+### Current (Validation Phase)
+- **36 curated examples** (hand-crafted for quality)
+  - 10 Conscious-BizMath (LTV + Time Violence)
+  - 5 Experiment Cards (hypothesis → test → C-ROI)  
+  - 5 Compliance Drills (trust/evidence checks)
+  - 16 SFT Templates (perfect schema examples)
 
-Total wall clock time: 3h51m
+### Future (Production Scale)
+- **170K+ generated examples** (when scaling up)
+  - 100K Conscious-BizMath
+  - 50K Experiment Cards
+  - 20K Compliance Drills
+
+**Generation strategy:** GPT-4 + human validation (~$200-500 investment)
 
 ---
 
-(Your table might be missing the RL number by default). For a lot more information around the speedrun script and what to look for and expect, please refer to the walkthrough that I posted in Discussions of the repo: ["Introducing nanochat: The best ChatGPT that $100 can buy"](https://github.com/karpathy/nanochat/discussions/1).
+## Example Outputs
 
-## Bigger models
+### Unit Economics Query
 
-Unsurprisingly, $100 is not enough to train a highly performant ChatGPT clone. In fact, LLMs are famous for their multi-million dollar capex. For our purposes, I think there are two more scales of interest. First is the ~$300 tier d26 model (i.e. depth=26) that trains in ~12 hours, which slightly outperforms GPT-2 CORE score. Second is the $1000 tier (~41.6 hours), just because it's a nice round number. But both of these are not yet fully supported and therefore not attached here in the master branch yet.
+**Input:**  
+"Calculate LTV for $50/month, 18 month retention, $200 CAC."
 
-That said, to give a sense, the example changes needed for the [speedrun.sh](speedrun.sh) file to train a GPT-2 grade model d26 only involve three changes:
+**CofounderChat Output:**
+```
+<|assumptions|>
+1. Churn rate constant at ~5.5%/month
+2. No expansion revenue
+
+<|python_start|>50*18<|python_end|><|output_start|>900<|output_end|>
+
+LTV = $900
+CAC = $200
+LTV:CAC = 4.5:1 ✓
+
+<|time_violence|>
+If product saves users 2 hr/week:
+ΔTVH = 2 hr/week × 52 weeks × 1.5 yr = 156 hours
+v_t = $35/hr
+Time value = $5,460
+
+<|time_dividend|>
+Users: 93.6 hr (60%)
+Navigators: 31.2 hr (20%)
+Company: 31.2 hr (20%)
+
+<|metrics|>
+Traditional LTV: $900
+Conscious value: $900 + $5,460 = $6,360
+Multiplier: 7.1x (time value dominates)
+```
+
+### Compliance Check
+
+**Input:**  
+"Can we claim 'AI reduces support tickets by 40%' in marketing?"
+
+**CofounderChat Output:**
+```
+<|trust_evidence|>
+Insufficient evidence. Need:
+1. Sample size (N=?)
+2. Controlled test (A/B)
+3. Time period (1 week vs 6 months?)
+4. Statistical significance (p<0.05)
+
+<|compliance|>
+FTC requires reasonable basis for claims
+Can't use unvalidated assertion
+
+<|tests|>
+Run proper A/B test:
+- 100 customers WITH AI vs 100 WITHOUT
+- Duration: 3 months
+- Track: ticket volume, significance
+
+<|metrics|>
+Current: no evidence
+Action: test before claiming
+```
+
+---
+
+## Architecture
+
+### Conscious Economics Extensions
+
+**1. Special Tokens** (21 total)
+```python
+<|assumptions|>  # Ranked risks
+<|tests|>        # Falsifiable experiments
+<|time_violence|> # TV calculations
+<|time_dividend|> # TD distribution
+<|metrics|>      # C-ROI calculations
+<|trust_evidence|> # Source citations
+<|compliance|>   # Constraint checks
+```
+
+**2. Calculation Functions**
+```python
+from cofounderchat.conscious_tools import tv_ops, conscious_index, roi_conscious
+
+# Calculate Time Violence
+ops = tv_ops(arr_rate=10, svc_rate=12, var_arr=4, var_svc=2, tau=8)
+# → 16.33 hours
+
+# Calculate Consciousness Index
+c = conscious_index(tv_human=20, tv_total=100)
+# → 0.80 (80% automated)
+
+# Calculate Conscious ROI
+roi = roi_conscious(rev=5000, dtvh=15, v_t=35)
+# → {'c_roi': 5542.80, 'time_value': 525.00}
+```
+
+**3. Tool-Augmented Generation**
+
+Model emits parameters:
+```
+<|time_violence|> arr_rate=10, svc_rate=12, var_arr=4, var_svc=2, tau=8
+```
+
+Engine computes and injects:
+```
+Ops_Score = 16.33 hours
+```
+
+Result is auditable and non-hallucinated (like calculator tool).
+
+---
+
+## Files Changed from nanochat
+
+### Modified
+- `cofounderchat/tokenizer.py` (+12 special tokens)
+- `cofounderchat/engine.py` (+150 lines, conscious tool integration)
+- `scripts/mid_train.py` (added Conscious Economics data mixture)
+- `scripts/chat_sft.py` (added SFT templates, schema validation)
+
+### New
+- `cofounderchat/conscious_tools.py` (calculation engine)
+- `tasks/conscious_validation_data.py` (20 examples)
+- `tasks/conscious_sft_templates.py` (16 perfect examples)
+- `tasks/conscious_biz_math.py`, `experiment_cards.py`, `compliance_drills.py` (task wrappers)
+- `tasks/founder_tv_eval.py`, `td_accounting_eval.py`, `trust_compliance_eval.py` (evaluation)
+- `tests/test_conscious_tools.py` (34 unit tests)
+
+See [CONSCIOUS_ECONOMICS.md](CONSCIOUS_ECONOMICS.md) for details.
+
+---
+
+## Testing
+
+### Run Validation Test (Local, $0)
 
 ```bash
-...
-# you'll need to download more data shards for pretraining
-# get the number of parameters, multiply 20 to get tokens, multiply by 4.8 to get chars,
-# divide by 250 million to get number of shards. todo need to improve this...
-python -m nanochat.dataset -n 450 &
-...
-# use --depth to increase model size. to not oom, halve device batch size 32 -> 16:
-torchrun --standalone --nproc_per_node=8 -m scripts.base_train -- --depth=26 --device_batch_size=16
-...
-# make sure to use the same later during midtraining:
-torchrun --standalone --nproc_per_node=8 -m scripts.mid_train -- --device_batch_size=16
+source .venv/bin/activate
+python test_validation_pattern.py
 ```
 
-That's it! The biggest thing to pay attention to is making sure you have enough data shards to train on (the code will loop and do more epochs over the same training set otherwise, decreasing learning speed a bit), and managing your memory/VRAM, primarily by decreasing the `device_batch_size` until things fit (the scripts automatically compensates by increasing the number of gradient accumulation loops, simply turning parallel compute to sequential compute).
+Tests if a tiny model can learn to emit Conscious Economics blocks.
 
-And a bit more about computing environments that will run nanochat:
+### Run Unit Tests
 
-- The code will run just fine on the Ampere 8XA100 GPU node as well, but a bit slower.
-- All code will run just fine on even a single GPU by omitting `torchrun`, and will produce ~identical results (code will automatically switch to gradient accumulation), but you'll have to wait 8 times longer.
-- If your GPU(s) have less than 80GB, you'll have to tune some of the hyperparameters or you will OOM / run out of VRAM. Look for `--device_batch_size` in the scripts and reduce it until things fit. E.g. from 32 (default) to 16, 8, 4, 2, or even 1. Less than that you'll have to know a bit more what you're doing and get more creative.
-- Most of the code is fairly vanilla PyTorch so it should run on anything that supports that - xpu, mps, or etc, but I haven't implemented this out of the box so it might take a bit of tinkering.
+```bash
+# Conscious tools tests (34 tests)
+python -m pytest tests/test_conscious_tools.py -v
 
-## Questions
+# Tokenizer tests
+python -m pytest tests/test_rustbpe.py -v
+```
 
-nanochat is designed to be short and sweet. One big advantage of this is that we can package up all of the files together and copy paste them to your favorite LLM to ask arbitrary questions. As an example, I like to package up the repo using the [files-to-prompt](https://github.com/simonw/files-to-prompt) utility like so:
+### Verify Evaluation Tasks
+
+```bash
+python -m tasks.founder_tv_eval      # Time Violence calculation accuracy
+python -m tasks.td_accounting_eval   # Time Dividend accounting
+python -m tasks.trust_compliance_eval # Trust & compliance checks
+```
+
+---
+
+## Questions & Support
+
+cofounderchat is designed to be short and hackable. Package it up and ask your favorite LLM:
 
 ```bash
 files-to-prompt . -e py -e md -e rs -e html -e toml -e sh --ignore "*target*" --cxml > packaged.txt
 ```
 
-This includes all py, rs, html, toml, sh files, excludes the `rustbpe/target` folder, and chooses the cxml output format. Everything is written to the `packaged.txt` file, which atm measures ~330KB (i.e. well below ~100K tokens for a state of the art LLM), and ~8K lines of code in 45 files.
+Or browse with [DeepWiki](https://deepwiki.com/) (change github.com → deepwiki.com in URL).
 
-Alternatively, I recommend using [DeepWiki](https://deepwiki.com/) from Devin/Cognition to ask questions of this repo. In the URL of this repo, simply change github.com to deepwiki.com, and you're off.
-
-## Tests
-
-I haven't invested too much here but some tests exist, especially for the tokenizer. Run e.g. as:
-
-```bash
-python -m pytest tests/test_rustbpe.py -v -s
-```
+---
 
 ## Contributing
 
-nanochat is nowhere finished. The goal is to improve the state of the art in micro models that are accessible to work with end to end on budgets of < $1000 dollars. Accessibility is about overall cost but also about cognitive complexity - nanochat is not an exhaustively configurable LLM "framework"; there will be no giant configuration objects, model factories, or if-then-else monsters in the code base. It is a single, cohesive, minimal, readable, hackable, maximally-forkable "strong baseline" codebase designed to run start to end and produce a concrete ChatGPT clone and its report card.
+CofounderChat is actively being developed. Currently building:
+- Full training dataset (170K+ examples)
+- Advanced evaluation metrics
+- RL optimization for Time Violence reduction
+
+**Current focus:** Infrastructure complete (70%), data generation next.
+
+---
 
 ## Acknowledgements
 
-- The name (nanochat) derives from my earlier project [nanoGPT](https://github.com/karpathy/nanoGPT), which only covered pretraining.
-- nanochat is also inspired by [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt), which gamified the nanoGPT repo with clear metrics and a leaderboard, and borrows a lot of its ideas and some implementation for pretraining.
-- Thank you to [HuggingFace](https://huggingface.co/) for fineweb and smoltalk.
-- Thank you [Lambda](https://lambda.ai/service/gpu-cloud) for the compute used in developing this project.
-- Thank you to chief LLM whisperer 🧙‍♂️ Alec Radford for advice/guidance.
+**CofounderChat is built on:**
+- [nanochat](https://github.com/karpathy/nanochat) by Andrej Karpathy - minimal ChatGPT training pipeline
+- [nanoGPT](https://github.com/karpathy/nanoGPT) - pioneered minimal, hackable LLM training  
+- [modded-nanoGPT](https://github.com/KellerJordan/modded-nanogpt) - gamified training with metrics
+- [HuggingFace](https://huggingface.co/) for fineweb and smoltalk datasets
+- [Lambda](https://lambda.ai/service/gpu-cloud) for GPU compute
+- Chief LLM whisperer 🧙‍♂️ Alec Radford for nanochat guidance
+
+**Conscious Economics framework:**
+- Developed by Leo Guinan / Bottega 1010
+- Time Violence formalization
+- Conscious ROI methodology
+- Trust & compliance principles
+
+---
 
 ## Cite
 
-If you find nanochat helpful in your research cite simply as:
+If you use CofounderChat in your research:
+
+```bibtex
+@misc{cofounderchat,
+  author = {Leo Guinan},
+  title = {CofounderChat: Conscious AI Co-founder trained on Time Violence reduction},
+  year = {2025},
+  publisher = {GitHub},
+  howpublished = {\url{https://github.com/leoguinan/cofounderchat}},
+  note = {Built on nanochat by Andrej Karpathy}
+}
+```
+
+For the base nanochat framework:
 
 ```bibtex
 @misc{nanochat,
@@ -135,6 +408,8 @@ If you find nanochat helpful in your research cite simply as:
 }
 ```
 
+---
+
 ## License
 
-MIT
+MIT (inherited from nanochat)

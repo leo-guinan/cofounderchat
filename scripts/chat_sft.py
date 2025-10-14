@@ -17,10 +17,10 @@ import wandb
 import torch
 import torch.distributed as dist
 
-from nanochat.common import compute_init, compute_cleanup, get_base_dir, print0, DummyWandb
-from nanochat.checkpoint_manager import load_model
-from nanochat.checkpoint_manager import save_checkpoint
-from nanochat.engine import Engine
+from cofounderchat.common import compute_init, compute_cleanup, get_base_dir, print0, DummyWandb
+from cofounderchat.checkpoint_manager import load_model
+from cofounderchat.checkpoint_manager import save_checkpoint
+from cofounderchat.engine import Engine
 from scripts.chat_eval import run_chat_eval
 
 from tasks.common import TaskMixture, TaskSequence
@@ -29,6 +29,9 @@ from tasks.arc import ARC
 from tasks.gsm8k import GSM8K
 from tasks.humaneval import HumanEval
 from tasks.smoltalk import SmolTalk
+# Conscious Economics tasks
+from tasks.conscious_sft_templates import ConsciousSFTTemplates
+from tasks.conscious_validation import ConsciousValidation
 
 # -----------------------------------------------------------------------------
 # SFT Hyperparameters
@@ -55,7 +58,7 @@ eval_steps = 100
 eval_metrics_every = 200
 # now allow CLI to override the settings via the configurator lol
 config_keys = [k for k,v in globals().items() if not k.startswith('_') and isinstance(v, (int, float, bool, str))]
-exec(open(os.path.join('nanochat', 'configurator.py')).read()) # overrides from command line or config file
+exec(open(os.path.join('cofounderchat', 'configurator.py')).read()) # overrides from command line or config file
 user_config = {k: globals()[k] for k in config_keys} # possibly useful for logging
 # -----------------------------------------------------------------------------
 
@@ -67,7 +70,7 @@ autocast_ctx = torch.amp.autocast(device_type="cuda", dtype=dtype)
 
 # wandb logging init
 use_dummy_wandb = run == "dummy" or not master_process
-wandb_run = DummyWandb() if use_dummy_wandb else wandb.init(project="nanochat-sft", name=run, config=user_config, save_code=True)
+wandb_run = DummyWandb() if use_dummy_wandb else wandb.init(project="cofounderchat-sft", name=run, config=user_config, save_code=True)
 
 # Load the model and tokenizer
 model, tokenizer, meta = load_model(source, device, phase="train", model_tag=model_tag, step=step)
@@ -79,12 +82,61 @@ engine = Engine(model, tokenizer) # will be used for inline model evaluation onl
 # Task data mixture we'll train on
 
 train_ds = TaskMixture([
-    ARC(subset="ARC-Easy", split="train"), # 2.3K rows
-    ARC(subset="ARC-Challenge", split="train"), # 1.1K rows
-    GSM8K(subset="main", split="train"), # 8K rows
-    SmolTalk(split="train", stop=10_000), # 10K rows of smoltalk
-]) # 2.3K + 1.1K + 8K + 10K = 21.4K rows
+    # Conscious Economics (high-quality curated examples)
+    ConsciousSFTTemplates(split="train"),  # 16 perfect examples (schema enforcement)
+    ConsciousValidation(split="train"),    # 20 validation examples (diverse scenarios)
+    # Standard SFT tasks (reduced to make room for conscious economics)
+    ARC(subset="ARC-Easy", split="train", stop=1_500), # 1.5K rows (was 2.3K, reduced 35%)
+    ARC(subset="ARC-Challenge", split="train", stop=700), # 700 rows (was 1.1K, reduced 36%)
+    GSM8K(subset="main", split="train"), # 8K rows (unchanged - need calculator tool)
+    SmolTalk(split="train", stop=6_500), # 6.5K rows (was 10K, reduced 35%)
+]) # current total: 36 + 1.5K + 0.7K + 8K + 6.5K = 16.7K rows (was 21.4K)
+   # conscious economics = 36/16.7K = 0.2% (tiny now, will be ~40% when we scale data)
 val_ds = SmolTalk(split="test") # general conversations, 24K rows (though we don't actually use all of it)
+
+# -----------------------------------------------------------------------------
+# Optional: Conscious Economics schema validation
+
+def validate_conscious_economics_schema(conversation, strict=False):
+    """
+    Validate that conscious economics examples have proper schema.
+    
+    Args:
+        conversation: Conversation dict with messages
+        strict: If True, reject examples missing any required blocks
+    
+    Returns:
+        (is_valid, error_message) tuple
+    """
+    # Only validate if this looks like a conscious economics example
+    if len(conversation['messages']) < 2:
+        return True, None
+    
+    assistant_content = conversation['messages'][1]['content']
+    
+    # Check if this is a conscious economics example (has any CE blocks)
+    ce_blocks = ['<|assumptions|>', '<|tests|>', '<|metrics|>', '<|time_violence|>',
+                 '<|trust_evidence|>', '<|compliance|>']
+    has_ce_blocks = any(block in assistant_content for block in ce_blocks)
+    
+    if not has_ce_blocks:
+        # Not a conscious economics example, skip validation
+        return True, None
+    
+    # It's a CE example - check for required blocks
+    required_blocks = ['<|metrics|>']  # Metrics is always required
+    recommended_blocks = ['<|assumptions|>', '<|tests|>']  # These should usually be present
+    
+    missing_required = [b for b in required_blocks if b not in assistant_content]
+    missing_recommended = [b for b in recommended_blocks if b not in assistant_content]
+    
+    if missing_required:
+        return False, f"Missing required blocks: {missing_required}"
+    
+    if strict and missing_recommended:
+        return False, f"Missing recommended blocks: {missing_recommended}"
+    
+    return True, None
 
 # -----------------------------------------------------------------------------
 # DataLoader
@@ -112,9 +164,19 @@ def sft_data_generator(dataset, batch_size):
         return inputs, targets
     # iterates over the dataset in epochs, tokenizes
     batch = []
+    skipped = 0
     while True:
         for i in range(ddp_rank, len(dataset), ddp_world_size):
             doc = dataset[i]
+            
+            # Optional: validate conscious economics schema
+            is_valid, error = validate_conscious_economics_schema(doc, strict=False)
+            if not is_valid:
+                skipped += 1
+                if skipped % 100 == 0:
+                    print0(f"Skipped {skipped} examples with schema violations")
+                continue
+            
             ids, mask = tokenizer.render_conversation(doc)
             batch.append((ids, mask))
             if len(batch) == batch_size:
@@ -265,7 +327,7 @@ if master_process:
     print(f"✅ Saved model checkpoint to {checkpoint_dir}")
 
 # Log to report
-from nanochat.report import get_report
+from cofounderchat.report import get_report
 get_report().log(section="Chat SFT", data=[
     user_config, # CLI args
     {
