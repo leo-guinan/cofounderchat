@@ -1,0 +1,20 @@
+# Dependencies
+node_modules
+
+# Development
+*.log
+*.md
+.env*
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# IMPORTANT: Never ignore these files
+!package.json
+!pnpm-lock.yaml
+

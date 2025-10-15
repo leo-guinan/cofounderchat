@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Development
+*.log
+*.md
+.env*
+!.env.production.template
+
+# Tests
+tests
+*.test.ts
+*.spec.ts
+vitest.config.ts
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+
+# IMPORTANT: Never ignore these files
+!package.json
+!pnpm-lock.yaml
+!tsconfig.json
+
