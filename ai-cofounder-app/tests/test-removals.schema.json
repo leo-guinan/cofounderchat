@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Test Removal Predictions",
+  "description": "Predictions for tests that will fail (append-only policy enforcement)",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "test_name",
+      "predicted_reason",
+      "predicted_error",
+      "created_by",
+      "created_at"
+    ],
+    "properties": {
+      "test_name": {
+        "type": "string",
+        "description": "Full name of test predicted to fail"
+      },
+      "predicted_reason": {
+        "type": "string",
+        "description": "Why this test will fail (e.g., 'Migrating API from REST to GraphQL')"
+      },
+      "predicted_error": {
+        "type": "string",
+        "description": "Expected error message"
+      },
+      "created_by": {
+        "type": "string",
+        "description": "Developer making prediction"
+      },
+      "created_at": {
+        "type": "string",
+        "format": "date-time"
+      },
+      "validated": {
+        "type": "boolean",
+        "default": false
+      },
+      "actual_error": {
+        "type": "string",
+        "description": "Actual error when test failed (filled by CI)"
+      },
+      "removed_at": {
+        "type": "string",
+        "format": "date-time"
+      }
+    }
+  }
+}

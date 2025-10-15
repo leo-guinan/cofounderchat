@@ -1,0 +1,27 @@
+# Git attributes for consistent handling
+
+# Auto-detect text files
+* text=auto
+
+# TypeScript/JavaScript
+*.ts text eol=lf
+*.tsx text eol=lf
+*.js text eol=lf
+*.jsx text eol=lf
+*.json text eol=lf
+
+# Markdown
+*.md text eol=lf
+
+# Shell scripts
+*.sh text eol=lf
+
+# Images
+*.png binary
+*.jpg binary
+*.svg text
+
+# SQLite databases
+*.db binary
+*.db-shm binary
+*.db-wal binary

@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+*.log
+
+# Build outputs
+dist/
+build/
+.next/
+
+# Environment
+.env
+.env.local
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+data/
+
+# Docker
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

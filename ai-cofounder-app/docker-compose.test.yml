@@ -1,0 +1,58 @@
+version: '3.8'
+
+# Test environment - spins up services for testing
+
+services:
+  backend-test:
+    build:
+      context: ./backend
+      target: builder  # Use builder stage (not production)
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=file:./data/test.db
+      - LOG_LEVEL=error
+    env_file:
+      - .env.test
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/tests:/app/tests
+      - ./data/test:/app/data
+    command: npm run test:watch
+    
+  frontend-test:
+    build: ./frontend
+    environment:
+      - NODE_ENV=test
+      - VITE_API_URL=http://backend-test:3000
+    volumes:
+      - ./frontend/src:/app/src
+      - ./frontend/tests:/app/tests
+    command: npm run test:watch
+    
+  test-runner:
+    image: node:20-alpine
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+      - ./coverage:/workspace/coverage
+    env_file:
+      - .env.test
+    environment:
+      - NODE_ENV=test
+    depends_on:
+      - backend-test
+    command: sh -c "cd backend && npm test && cd ../frontend && npm test"
+
+  e2e-test:
+    image: mcr.microsoft.com/playwright:latest
+    working_dir: /workspace
+    volumes:
+      - ./tests/e2e:/workspace/tests
+      - ./playwright-report:/workspace/playwright-report
+    environment:
+      - BASE_URL=http://frontend-test
+      - API_URL=http://backend-test:3000
+    depends_on:
+      - backend-test
+      - frontend-test
+    command: npx playwright test

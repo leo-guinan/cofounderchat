@@ -1,0 +1,100 @@
+name: Pre-Review Checks
+
+# Runs on every PR to enforce standards before human review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pre-review:
+    name: Automated Pre-Review Checks
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better analysis
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      # ===== FORMATTING CHECKS =====
+      - name: Check code formatting (Prettier)
+        run: npm run format:check
+        continue-on-error: false
+      
+      # ===== LINTING CHECKS =====
+      - name: Lint TypeScript (ESLint)
+        run: npm run lint
+        continue-on-error: false
+      
+      # ===== TYPE CHECKING =====
+      - name: TypeScript type check
+        run: npm run type-check
+        continue-on-error: false
+      
+      # ===== TESTS =====
+      - name: Run unit tests
+        run: npm run test
+        continue-on-error: false
+      
+      - name: Generate coverage
+        run: npm run test:coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+      
+      # ===== SECURITY CHECKS =====
+      - name: Check for secrets in code
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+      
+      - name: Audit dependencies
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+      
+      # ===== REQUIREMENTS VALIDATION =====
+      - name: Validate against requirements
+        run: npm run validate:requirements
+        continue-on-error: true
+      
+      # ===== CODE QUALITY =====
+      - name: Check complexity
+        run: npm run complexity:check
+        continue-on-error: true
+      
+      - name: Check bundle size
+        run: npm run bundle:check
+        continue-on-error: true
+      
+      # ===== PR METADATA =====
+      - name: Check PR has description
+        run: |
+          if [ -z "${{ github.event.pull_request.body }}" ]; then
+            echo "❌ PR must have a description"
+            exit 1
+          fi
+      
+      - name: Check PR is linked to issue/requirement
+        run: node .github/scripts/check-pr-linked.js
+        continue-on-error: true
+      
+      # ===== GENERATE REVIEW SUMMARY =====
+      - name: Generate automated review
+        run: node .github/scripts/generate-review.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}

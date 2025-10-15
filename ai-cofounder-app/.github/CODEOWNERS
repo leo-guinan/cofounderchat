@@ -1,0 +1,17 @@
+# Code Owners
+# AI Code Review Agent automatically reviews all changes
+# Human reviewers assigned for specific areas
+
+# Default: AI agent reviews everything
+* @ai-cofounder-bot
+
+# Critical paths require human review
+/backend/src/db/ @tech-lead
+/.github/workflows/ @devops-lead
+/docs/SECRETS.md @security-lead
+
+# Frontend changes
+/frontend/ @frontend-lead
+
+# Testing changes
+/tests/ @qa-lead

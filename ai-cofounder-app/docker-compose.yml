@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data:/app/data
+      - ./backend/src:/app/src
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=file:./data/ai-cofounder.db
+    depends_on:
+      - telemetry
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend/src:/app/src
+    environment:
+      - VITE_API_URL=http://localhost:3000
+    depends_on:
+      - backend
+
+  telemetry:
+    build: ./telemetry
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ID=local-dev
+      - CENTRAL_URL=http://backend:3000

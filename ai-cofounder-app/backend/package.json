@@ -1,0 +1,38 @@
+{
+  "name": "ai-cofounder-backend",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:migrate": "drizzle-kit push:sqlite",
+    "db:studio": "drizzle-kit studio",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:ui": "vitest --ui",
+    "generate:tests": "tsx scripts/generate-tests.ts"
+  },
+  "dependencies": {
+    "@mastra/core": "latest",
+    "drizzle-orm": "^0.29.0",
+    "better-sqlite3": "^9.2.0",
+    "fastify": "^4.25.0",
+    "@fastify/websocket": "^8.0.0",
+    "@fastify/cors": "^8.4.0",
+    "zod": "^3.22.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "tsx": "^4.7.0",
+    "@types/node": "^20.10.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "drizzle-kit": "^0.20.0",
+    "vitest": "^1.0.0",
+    "@vitest/ui": "^1.0.0",
+    "@vitest/coverage-v8": "^1.0.0",
+    "supertest": "^6.3.0",
+    "@types/supertest": "^6.0.0"
+  }
+}
